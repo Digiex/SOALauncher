@@ -6,9 +6,11 @@
 	mc:Ignorable="d"
 	x:Class="SOALauncher.ConsoleTab"
 	x:Name="UserControl"
-	d:DesignWidth="820" d:DesignHeight="247">
+	d:DesignWidth="820" d:DesignHeight="247" Unloaded="UserControl_Unloaded">
 
-	<Grid x:Name="LayoutRoot">
-		<TextBlock><Run Text="Console here"/></TextBlock>
-	</Grid>
+    <Grid x:Name="LayoutRoot">
+        <ScrollViewer Name="ScrollView">
+            <TextBox TextWrapping="Wrap" Name="ConsoleTextBox" Background="#7F000000" Foreground="White" FontFamily="Consolas" KeyDown="ConsoleTextBox_KeyDown" IsReadOnlyCaretVisible="True" />
+        </ScrollViewer>
+    </Grid>
 </UserControl>

@@ -8,7 +8,19 @@
 	x:Name="UserControl"
 	d:DesignWidth="820" d:DesignHeight="247">
 
-	<Grid x:Name="LayoutRoot">
-		<TextBlock><Run Text="Settings here"/></TextBlock>
-	</Grid>
+    <Grid x:Name="LayoutRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Screen resolution" VerticalAlignment="Top"/>
+        <ComboBox Grid.Column="1" Name="ResolutionBox" HorizontalAlignment="Left" VerticalAlignment="Top" Width="120" SelectionChanged="ResolutionBox_SelectionChanged"/>
+        <TextBlock Grid.Column="0" Grid.Row="1" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Fullscreen" VerticalAlignment="Top"/>
+        <CheckBox Grid.Column="1" Name="FullscreenBox" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" Checked="FullscreenBox_Checked" Unchecked="FullscreenBox_Checked"/>
+    </Grid>
 </UserControl>
