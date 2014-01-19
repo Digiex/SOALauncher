@@ -1,5 +1,4 @@
-﻿using Microsoft.Expression.Interactivity.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,15 +27,10 @@ namespace SOALauncher
 
         private void window_Loaded(object sender, RoutedEventArgs e)
         {
-            ExtendedVisualStateManager.GoToElementState(this as FrameworkElement, "Startup", false);
-            ExtendedVisualStateManager.GoToElementState(this as FrameworkElement, "ShowControls", true);
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            VisualStateManager.GoToState(this.window,"Startup",false);
-            //Startup.Storyboard.Begin();
-            //ExtendedVisualStateManager.GoToElementState(this as FrameworkElement, "ShowControls", true);
         }
     }
 }
