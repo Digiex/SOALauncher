@@ -13,7 +13,7 @@
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="image">
                 <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="SaveList">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="VersionList">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:2" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:3" Value="1"/>
@@ -223,7 +223,7 @@
         	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="tabControl">
         		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
         	</DoubleAnimationUsingKeyFrames>
-        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="SaveList">
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="VersionList">
         		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
         	</DoubleAnimationUsingKeyFrames>
         	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="PlayButton">
@@ -294,11 +294,14 @@
             <TabItem Header="Settings">
                 <local:SettingsTab x:Name="SettingsTabControl"/>
             </TabItem>
+            <TabItem Header="Versions" Name="versionTabItem">
+                <local:VersionTab x:Name="versionTab"/>
+            </TabItem>
             <TabItem Header="Console" Name="ConsoleTabItem" Visibility="Collapsed">
                 <local:ConsoleTab x:Name="Console"/>
             </TabItem>
         </TabControl>
-        <ComboBox x:Name="SaveList" IsEditable="True" Grid.Column="1" Grid.Row="2" Width="200" HorizontalAlignment="Right" SelectionChanged="SaveList_SelectionChanged" TextInput="SaveList_TextInput"/>
+        <ComboBox x:Name="VersionList" Grid.Column="1" Grid.Row="2" Width="200" HorizontalAlignment="Right" SelectionChanged="VersionList_SelectionChanged"/>
         <Button Content="Play" Grid.Column="2" Grid.Row="2" x:Name="PlayButton" HorizontalAlignment="Left" VerticalAlignment="Top" Width="90" Height="30" Click="PlayButton_Click"/>
 
     </Grid>

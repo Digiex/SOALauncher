@@ -26,13 +26,14 @@ namespace SOALauncher
         {
             this.InitializeComponent();
             GameThread = new Thread(new ThreadStart(RunGameThread));
+            OutputThread = new Thread(new ThreadStart(RunOutputThread));
         }
-        private string SaveName;
-        public void RunGame(string savename)
+        MainWindow.VersionListItem Version;
+        public void RunGame(MainWindow.VersionListItem version)
         {
             if (!GameThread.IsAlive)
             {
-                SaveName = savename;
+                Version = version;
                 GameThread.Start();
             }
             else
@@ -47,15 +48,25 @@ namespace SOALauncher
             {
                 GameThread.Abort();
             }
+            if (OutputThread.IsAlive)
+            {
+                OutputThread.Abort();
+            }
         }
         Thread GameThread;
+        Thread OutputThread;
         Process process = new Process();
         bool killProcess = false;
 
         private void RunGameThread()
         {
-            var processStartInfo = new ProcessStartInfo(@"C:\Users\Jesse\Downloads\SoA_0.1.2.1.2\Release\SOA.exe", "");
-            processStartInfo.WorkingDirectory = @"C:\Users\Jesse\Downloads\SoA_0.1.2.1.2\Release\";
+            var savedir = Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar + "Saves";
+            if (!Directory.Exists(savedir))
+            {
+                Directory.CreateDirectory(savedir);
+            }
+            var processStartInfo = new ProcessStartInfo(Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar + "SOA.exe", "");
+            processStartInfo.WorkingDirectory = Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar;
             processStartInfo.UseShellExecute = false;
             processStartInfo.ErrorDialog = true;
 
@@ -66,21 +77,20 @@ namespace SOALauncher
 
 
             process.StartInfo = processStartInfo;
-            process.OutputDataReceived += process_OutputDataReceived;
             bool processStarted = process.Start();
-            process.BeginOutputReadLine();
+            OutputThread.Start();
             process.StandardInput.WriteLine(Settings.Default.Resolution + 1);
             process.StandardInput.WriteLine(Settings.Default.Fullscreen ? 1 : 0);
-            if (Directory.Exists(@"C:\Users\Jesse\Downloads\SoA_0.1.2.1.2\Release\Data\Saves\" + SaveName))
-            {
-                process.StandardInput.WriteLine(1);
-            }
-            else
-            {
-                process.StandardInput.WriteLine(0);
-                process.StandardInput.WriteLine(SaveName);
-                process.StandardInput.WriteLine(0);
-            }
+            //if (Directory.Exists(@"C:\Users\Jesse\Downloads\SoA_0.1.2.1.2\Release\Data\Saves\" + SaveName))
+            //{
+            //    process.StandardInput.WriteLine(1);
+            //}
+            //else
+            //{
+            //    process.StandardInput.WriteLine(0);
+            //    process.StandardInput.WriteLine(SaveName);
+            //    process.StandardInput.WriteLine(0);
+            //}
             try
             {
                 while (!process.HasExited)
@@ -95,16 +105,16 @@ namespace SOALauncher
             {
                 process.Kill();
             }
+            OutputThread.Abort();
         }
 
-        void process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        private void RunOutputThread()
         {
-            if (e.Data == null)
+            while (!process.HasExited)
             {
-                return;
+                AddToConsole(((char)process.StandardOutput.Read()).ToString());
             }
-            string line = e.Data;
-            AddToConsole(line.Trim() + Environment.NewLine);
+
         }
 
         public void AddToConsole(string text)
@@ -113,31 +123,23 @@ namespace SOALauncher
                 new Action<ConsoleTab>((sender) =>
                 {
                     ConsoleTextBox.Text += text;
-                    ScrollView.ScrollToBottom();
+                    ConsoleTextBox.ScrollToEnd();
                 }),
                 new object[] { this }
                 );
         }
 
-        private void UserControl_Unloaded(object sender, RoutedEventArgs e)
+        private void InputBox_KeyDown(object sender, KeyEventArgs e)
         {
-            EndGame();
-        }
-
-        private void ConsoleTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            ConsoleTextBox.CaretIndex = ConsoleTextBox.Text.Length - 1;
             if (e.Key == Key.Enter)
             {
-                var ary = ConsoleTextBox.Text.Split(Environment.NewLine.ToCharArray());
-                process.StandardInput.WriteLine(ary[ary.Length - 1]);
-            }
-            else if (e.Key == Key.Return)
-            {
-                if (ConsoleTextBox.Text.EndsWith(Environment.NewLine))
+                if (!process.HasExited)
                 {
-                    e.Handled = true;
+                    AddToConsole(InputBox.Text + Environment.NewLine);
+                    process.StandardInput.WriteLine(InputBox.Text);
+                    InputBox.Text = "";
                 }
+                e.Handled = true;
             }
         }
     }
