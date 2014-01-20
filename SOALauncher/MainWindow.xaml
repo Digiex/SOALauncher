@@ -48,7 +48,6 @@
                 <EasingDoubleKeyFrame KeyTime="0:0:2" Value="-15"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
-        <Storyboard x:Key="OnLoaded2"/>
         <ItemsPanelTemplate x:Key="ItemsPanelTemplate1">
             <StackPanel IsItemsHost="True"/>
         </ItemsPanelTemplate>
@@ -217,11 +216,40 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Storyboard x:Key="OnPlay">
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="image">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="tabControl">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="SaveList">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="PlayButton">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(Brush.RelativeTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" Storyboard.TargetName="window">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="1"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:2" Value="20"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(Brush.RelativeTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="window">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="1"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:2" Value="20"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="window">
+        		<EasingDoubleKeyFrame KeyTime="0:0:1" Value="1"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:2" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        </Storyboard>
     </Window.Resources>
     <Window.Triggers>
         <EventTrigger RoutedEvent="FrameworkElement.Loaded">
             <BeginStoryboard Storyboard="{StaticResource OnLoaded1}"/>
         </EventTrigger>
+        <!--<EventTrigger RoutedEvent="ButtonBase.Click" SourceName="PlayButton">
+        	<BeginStoryboard x:Name="OnPlay_BeginStoryboard" Storyboard="{StaticResource OnPlay}"/>
+        </EventTrigger>-->
     </Window.Triggers>
     <Window.Background>
         <ImageBrush ImageSource="Assets/Images/Background.png" Stretch="UniformToFill">
