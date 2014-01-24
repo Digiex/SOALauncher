@@ -95,7 +95,13 @@
                             <Border x:Name="mainBorder" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0" Background="{TemplateBinding Background}" Margin="0">
                                 <Border x:Name="innerBorder" BorderThickness="0" Margin="-1" Opacity="0" Background="{DynamicResource TabItem.Selected.Background}"/>
                             </Border>
-                            <ContentPresenter x:Name="contentPresenter" ContentSource="Header" Focusable="False" HorizontalAlignment="Center" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
+                            <ContentPresenter x:Name="contentPresenter" TextElement.FontFamily="/Assets/Fonts/#Orbitron" ContentSource="Header" Focusable="False"
+                                              HorizontalAlignment="Center" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center">
+                                <ContentPresenter.Effect>
+                                    <DropShadowEffect Color="White" BlurRadius="10" Direction="0" ShadowDepth="0"/>
+                                </ContentPresenter.Effect>
+                            </ContentPresenter>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <MultiDataTrigger>
@@ -288,7 +294,7 @@
             <TabControl.Background>
                 <ImageBrush ImageSource="Assets/Images/BackgroundTile.png" TileMode="Tile" Stretch="None" Viewport="0,0,125,72" ViewportUnits="Absolute"/>
             </TabControl.Background>
-            <TabItem Header="News">
+            <TabItem Header="Update news">
                 <local:NewsTab/>
             </TabItem>
             <TabItem Header="Settings">
@@ -299,6 +305,9 @@
             </TabItem>
             <TabItem Header="Console" Name="ConsoleTabItem" Visibility="Collapsed">
                 <local:ConsoleTab x:Name="Console"/>
+            </TabItem>
+            <TabItem Header="Saves">
+                <local:SavesTab/>
             </TabItem>
         </TabControl>
         <ComboBox x:Name="VersionList" Grid.Column="1" Grid.Row="2" Width="200" HorizontalAlignment="Right" SelectionChanged="VersionList_SelectionChanged"/>
