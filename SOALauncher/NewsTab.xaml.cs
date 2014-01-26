@@ -23,18 +23,33 @@ namespace SOALauncher
         public NewsTab()
         {
             this.InitializeComponent();
-            HttpFeedFactory fact = new HttpFeedFactory();
-            fact.BeginCreateFeed(new Uri("http://rss.indiedb.com/games/seed-of-andromeda/downloads/feed/rss.xml"), (cb) =>
+            NewsList.Items.Add(new Rss20FeedItem()
             {
-                feed = fact.EndCreateFeed(cb);
-                Dispatcher.BeginInvoke(
-                new Action<NewsTab>((sender) =>
-                {
-                    NewsList.ItemsSource = feed.Items;
-                }),
-                new object[] { this }
-                );
+                Title = "Loading news...",
+                Content = "Please wait while the news load..."
             });
+            try
+            {
+                HttpFeedFactory fact = new HttpFeedFactory();
+                fact.BeginCreateFeed(new Uri("http://rss.indiedb.com/games/seed-of-andromeda/downloads/feed/rss.xml"), (cb) =>
+                {
+                    feed = fact.EndCreateFeed(cb);
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        NewsList.Items.Clear();
+                        NewsList.ItemsSource = feed.Items;
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                NewsList.Items.Clear();
+                NewsList.Items.Add(new Rss20FeedItem()
+                {
+                    Title = "Failed to load news!",
+                    Content = "Failed to load news! Error: " + ex.Message
+                });
+            }
         }
         IFeed feed;
     }
