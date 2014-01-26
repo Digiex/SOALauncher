@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -25,16 +26,37 @@ namespace SOALauncher
         public ConsoleTab()
         {
             this.InitializeComponent();
-            GameThread = new Thread(new ThreadStart(RunGameThread));
-            OutputThread = new Thread(new ThreadStart(RunOutputThread));
+            process.Exited += process_Exited;
+        }
+        bool gameRunning = false;
+        void process_Exited(object sender, EventArgs e)
+        {
+            gameRunning = false;
         }
         MainWindow.VersionListItem Version;
-        public void RunGame(MainWindow.VersionListItem version)
+        public async void RunGame(MainWindow.VersionListItem version)
         {
-            if (!GameThread.IsAlive)
+            if (!gameRunning)
             {
                 Version = version;
-                GameThread.Start();
+                try
+                {
+                    await StartGameAsync();
+                    InputBox.Focus();
+                    try
+                    {
+                        await RunOutputAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Failed to read console output: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to start the game: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    gameRunning = false;
+                }
             }
             else
             {
@@ -43,97 +65,68 @@ namespace SOALauncher
         }
         public void EndGame()
         {
-            killProcess = true;
-            if (GameThread.IsAlive)
-            {
-                GameThread.Abort();
-            }
-            if (OutputThread.IsAlive)
-            {
-                OutputThread.Abort();
-            }
-        }
-        Thread GameThread;
-        Thread OutputThread;
-        Process process = new Process();
-        bool killProcess = false;
-
-        private void RunGameThread()
-        {
-            var savedir = Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar + "Saves";
-            if (!Directory.Exists(savedir))
-            {
-                Directory.CreateDirectory(savedir);
-            }
-            var processStartInfo = new ProcessStartInfo(Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar + "SOA.exe", "");
-            processStartInfo.WorkingDirectory = Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar;
-            processStartInfo.UseShellExecute = false;
-            processStartInfo.ErrorDialog = true;
-
-            processStartInfo.RedirectStandardError = true;
-            processStartInfo.RedirectStandardInput = true;
-            processStartInfo.RedirectStandardOutput = true;
-            processStartInfo.CreateNoWindow = true;
-
-
-            process.StartInfo = processStartInfo;
-            bool processStarted = process.Start();
-            OutputThread.Start();
-            process.StandardInput.WriteLine(Settings.Default.Resolution + 1);
-            process.StandardInput.WriteLine(Settings.Default.Fullscreen ? 1 : 0);
-            //if (Directory.Exists(@"C:\Users\Jesse\Downloads\SoA_0.1.2.1.2\Release\Data\Saves\" + SaveName))
-            //{
-            //    process.StandardInput.WriteLine(1);
-            //}
-            //else
-            //{
-            //    process.StandardInput.WriteLine(0);
-            //    process.StandardInput.WriteLine(SaveName);
-            //    process.StandardInput.WriteLine(0);
-            //}
-            try
-            {
-                while (!process.HasExited)
-                {
-                    if (killProcess)
-                    {
-                        process.Kill();
-                    }
-                }
-            }
-            catch
+            if (gameRunning && process.MainWindowTitle.Length == 0)
             {
                 process.Kill();
             }
-            OutputThread.Abort();
+        }
+        Process process = new Process();
+
+        private Task StartGameAsync()
+        {
+            return Task.Run(() =>
+            {
+                gameRunning = true;
+                var savedir = Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar + "Data" + System.IO.Path.DirectorySeparatorChar + "Saves";
+                if (!Directory.Exists(savedir))
+                {
+                    Directory.CreateDirectory(savedir);
+                }
+                var processStartInfo = new ProcessStartInfo(Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar + "SOA.exe", "");
+                processStartInfo.WorkingDirectory = Version.DirPath + "Release" + System.IO.Path.DirectorySeparatorChar;
+                processStartInfo.UseShellExecute = false;
+                processStartInfo.ErrorDialog = true;
+
+                processStartInfo.RedirectStandardError = true;
+                processStartInfo.RedirectStandardInput = true;
+                processStartInfo.RedirectStandardOutput = true;
+                processStartInfo.CreateNoWindow = true;
+
+
+                process.StartInfo = processStartInfo;
+                bool processStarted = process.Start();
+                process.StandardInput.WriteLine(Settings.Default.Resolution + 1);
+                process.StandardInput.WriteLine(Settings.Default.Fullscreen ? 1 : 0);
+            });
         }
 
-        private void RunOutputThread()
+        private Task RunOutputAsync()
         {
-            while (!process.HasExited)
+            return Task.Run(() =>
             {
-                AddToConsole(((char)process.StandardOutput.Read()).ToString());
-            }
+                while (!process.HasExited)
+                {
+                    string text = ((char)process.StandardOutput.Read()).ToString();
+                    AddToConsole(text);
+                }
+            });
 
         }
 
         public void AddToConsole(string text)
         {
-            Dispatcher.BeginInvoke(
-                new Action<ConsoleTab>((sender) =>
+            Dispatcher.InvokeAsync(() =>
                 {
-                    ConsoleTextBox.Text += text;
+                    ConsoleTextBox.AppendText(text);
                     ConsoleTextBox.ScrollToEnd();
-                }),
-                new object[] { this }
-                );
+                });
         }
 
         private void InputBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                if (!process.HasExited)
+                if (gameRunning)
                 {
                     AddToConsole(InputBox.Text + Environment.NewLine);
                     process.StandardInput.WriteLine(InputBox.Text);

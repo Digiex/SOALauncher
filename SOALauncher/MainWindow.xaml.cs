@@ -1,21 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace SOALauncher
 {
@@ -28,37 +15,60 @@ namespace SOALauncher
         public MainWindow()
         {
             InitializeComponent();
-            var wc = new WebClient();
-            wc.DownloadStringCompleted += wc_DownloadStringCompleted;
-            wc.DownloadStringAsync(new Uri("http://minecraft.digiex.org/SOALauncher/SOA/versions.php"));
+            try
+            {
+                foreach (var dir in Directory.EnumerateDirectories(MainWindow.AppData + "Versions"))
+                {
+                    if (File.Exists(dir + Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar + "SOA.exe"))
+                    {
+                        VersionList.Items.Add(new VersionListItem()
+                        {
+                            Name = Path.GetFileName(Path.GetDirectoryName(dir + System.IO.Path.DirectorySeparatorChar))
+                        });
+                    }
+                }
+                versionTab.VersionListBox.ItemsSource = VersionList.Items;
+            }
+            catch { }
+            try
+            {
+                var wc = new WebClient();
+                wc.DownloadStringCompleted += wc_DownloadStringCompleted;
+                wc.DownloadStringAsync(new Uri("http://minecraft.digiex.org/SOALauncher/SOA/versions.php"));
+            }
+            catch { }
         }
 
         void wc_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
         {
-            var lines = e.Result.Split('\n');
-            foreach (var line in lines)
+            if (e.Error == null)
             {
-                if (line.StartsWith("#"))
+                var lines = e.Result.Split('\n');
+                foreach (var line in lines)
                 {
-                    continue;
-                }
-                var opt = line.Split('|');
-                if (opt.Length > 1)
-                {
-                    VersionList.Items.Add(new VersionListItem()
+                    if (line.StartsWith("#"))
                     {
-                        Name = opt[0],
-                        URL = opt[1]
-                    });
+                        continue;
+                    }
+                    var opt = line.Split('|');
+                    if (opt.Length > 1)
+                    {
+                        var item = new VersionListItem()
+                         {
+                             Name = opt[0],
+                             URL = opt[1]
+                         };
+                        if (VersionList.Items.Contains(item))
+                        {
+                            VersionList.Items.Remove(item);
+                        }
+                        VersionList.Items.Add(item);
+                    }
                 }
+                VersionList.SelectedIndex = VersionList.Items.Count - 1; //Select the last one, probably the newest
+                versionTab.VersionListBox.ItemsSource = VersionList.Items;
+                versionTab.VersionListBox.SelectedIndex = versionTab.VersionListBox.Items.Count - 1; //Select the last one, probably the newest
             }
-            VersionList.SelectedIndex = VersionList.Items.Count - 1; //Select the last one, probably the newest
-            versionTab.VersionListBox.ItemsSource = VersionList.Items;
-            versionTab.VersionListBox.SelectedIndex = versionTab.VersionListBox.Items.Count - 1; //Select the last one, probably the newest
-        }
-
-        private void window_Loaded(object sender, RoutedEventArgs e)
-        {
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
@@ -102,7 +112,7 @@ namespace SOALauncher
                 PlayButton.Content = "Play";
             }
         }
-        public class VersionListItem
+        public class VersionListItem : IEquatable<VersionListItem>
         {
             public string Name { get; set; }
             public string URL { get; set; }
@@ -123,6 +133,18 @@ namespace SOALauncher
             public override string ToString()
             {
                 return Name;
+            }
+            public bool Equals(VersionListItem obj)
+            {
+                return Name.Trim().ToLower().Equals(obj.Name.Trim().ToLower());
+            }
+            public override bool Equals(object obj)
+            {
+                if (obj is VersionListItem)
+                {
+                    return Equals((VersionListItem)obj);
+                }
+                return base.Equals(obj);
             }
         }
 
