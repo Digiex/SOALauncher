@@ -1,0 +1,1 @@
+If using Visual Studio 2013 please copy these to C:\Program Files (x86)\Microsoft SDKs\Windows\v8.1A\Bootstrapper\Packages
