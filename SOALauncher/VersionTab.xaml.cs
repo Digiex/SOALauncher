@@ -1,20 +1,11 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace SOALauncher
@@ -70,19 +61,40 @@ namespace SOALauncher
         void wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
             extractThread.Start();
-            DownloadProgressBar.IsIndeterminate = true;
         }
 
         private void Extract()
         {
-            FastZip fz = new FastZip();
-            fz.ExtractZip(currentDownload, System.IO.Path.GetDirectoryName(currentDownload), null);
+            using (ZipArchive archive = ZipFile.OpenRead(currentDownload))
+            {
+                var count = archive.Entries.Count;
+                var i = 0;
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    i++;
+                    Dispatcher.BeginInvoke(
+                    new Action<VersionTab>((sender) =>
+                    {
+                        DownloadProgressBar.Value = ((double)i / (double)count) * 100;
+                    }),
+                    new object[] { this }
+                    );
+                    string path = Path.Combine(Path.GetDirectoryName(currentDownload), entry.FullName.Replace('/', Path.DirectorySeparatorChar));
+                    if (entry.Name == "" || entry.FullName.EndsWith("/"))
+                    {
+                        Directory.CreateDirectory(path);
+                    }
+                    else
+                    {
+                        entry.ExtractToFile(path);
+                    }
+                }
+            }
             File.Delete(currentDownload);
             Dispatcher.BeginInvoke(
                 new Action<VersionTab>((sender) =>
                 {
                     currentDownload = string.Empty;
-                    DownloadProgressBar.IsIndeterminate = false;
                     DownloadProgressBar.Value = 0;
                     DownloadDeleteButton.IsEnabled = false;
                 }),
