@@ -1,9 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -18,14 +21,12 @@ namespace SOALauncher
         public VersionTab()
         {
             this.InitializeComponent();
-            extractThread = new Thread(new ThreadStart(Extract));
             wc.DownloadProgressChanged += wc_DownloadProgressChanged;
             wc.DownloadFileCompleted += wc_DownloadFileCompleted;
         }
 
         WebClient wc = new WebClient();
         static string currentDownload = string.Empty;
-        Thread extractThread;
         private void DownloadDeleteButton_Click(object sender, RoutedEventArgs e)
         {
             if (VersionListBox.SelectedItem == null)
@@ -37,19 +38,36 @@ namespace SOALauncher
             {
                 if (MessageBox.Show("Are you sure you want to delete the version? All saved games will be lost!", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
                 {
-                    Directory.Delete(ver.DirPath, true);
+                    try
+                    {
+                        Directory.Delete(ver.DirPath, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Failed to fully delete the folder! Please make sure the game is not running. Error: " + ex.Message, "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    VersionListBox_SelectionChanged(null, null);
                 }
             }
             else if (!wc.IsBusy && currentDownload == string.Empty)
             {
-                if (Directory.Exists(ver.DirPath))
+                try
                 {
-                    Directory.Delete(ver.DirPath, true);
+                    if (Directory.Exists(ver.DirPath))
+                    {
+                        Directory.Delete(ver.DirPath, true);
+                    }
+                    Directory.CreateDirectory(ver.DirPath);
+                    currentDownload = ver.DirPath + ver.Name + ".zip";
+                    DownloadDeleteButton.IsEnabled = false;
+                    wc.DownloadFileAsync(new Uri(ver.URL), currentDownload);
                 }
-                Directory.CreateDirectory(ver.DirPath);
-                currentDownload = ver.DirPath + ver.Name + ".zip";
-                DownloadDeleteButton.IsEnabled = false;
-                wc.DownloadFileAsync(new Uri(ver.URL), currentDownload);
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to begin download! " + ex.Message, "Download Start Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    currentDownload = "";
+                    DownloadDeleteButton.IsEnabled = true;
+                }
             }
         }
 
@@ -58,48 +76,59 @@ namespace SOALauncher
             DownloadProgressBar.Value = e.ProgressPercentage;
         }
 
-        void wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+        async void wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
-            extractThread.Start();
-        }
-
-        private void Extract()
-        {
-            using (ZipArchive archive = ZipFile.OpenRead(currentDownload))
+            if (e.Error == null)
             {
-                var count = archive.Entries.Count;
-                var i = 0;
-                foreach (ZipArchiveEntry entry in archive.Entries)
+                try
                 {
-                    i++;
-                    Dispatcher.BeginInvoke(
-                    new Action<VersionTab>((sender) =>
-                    {
-                        DownloadProgressBar.Value = ((double)i / (double)count) * 100;
-                    }),
-                    new object[] { this }
-                    );
-                    string path = Path.Combine(Path.GetDirectoryName(currentDownload), entry.FullName.Replace('/', Path.DirectorySeparatorChar));
-                    if (entry.Name == "" || entry.FullName.EndsWith("/"))
-                    {
-                        Directory.CreateDirectory(path);
-                    }
-                    else
-                    {
-                        entry.ExtractToFile(path);
-                    }
+                    await Extract();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Extraction failed! " + ex.Message, "Extraction Failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            File.Delete(currentDownload);
-            Dispatcher.BeginInvoke(
-                new Action<VersionTab>((sender) =>
+            else
+            {
+                MessageBox.Show("Download failed! " + e.Error.Message, "Download Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            currentDownload = string.Empty;
+            DownloadProgressBar.Value = 0;
+            DownloadDeleteButton.IsEnabled = true;
+            VersionListBox_SelectionChanged(null, null);
+        }
+
+        private Task Extract()
+        {
+            return Task.Run(() =>
+            {
+                using (ZipArchive archive = ZipFile.OpenRead(currentDownload))
                 {
-                    currentDownload = string.Empty;
-                    DownloadProgressBar.Value = 0;
-                    DownloadDeleteButton.IsEnabled = false;
-                }),
-                new object[] { this }
-                );
+                    var count = archive.Entries.Count;
+                    var i = 0;
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        i++;
+
+                        Dispatcher.InvokeAsync(() =>
+                           {
+                               DownloadProgressBar.Value = (int)(((double)i / (double)count) * 100);
+                           });
+                        string path = Path.Combine(Path.GetDirectoryName(currentDownload), entry.FullName.Replace('/', Path.DirectorySeparatorChar));
+                        if (entry.Name == "" || entry.FullName.EndsWith("/"))
+                        {
+                            Directory.CreateDirectory(path);
+                        }
+                        else
+                        {
+                            entry.ExtractToFile(path);
+                        }
+                    }
+                }
+                File.Delete(currentDownload);
+            });
         }
 
         public void Download(MainWindow.VersionListItem version)
