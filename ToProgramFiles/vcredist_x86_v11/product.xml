@@ -8,7 +8,7 @@
   </PackageFiles>
 
   <InstallChecks>
-    <MsiProductCheck Property="VCRedistInstalled" Product="{4F033B63-6A4E-355D-8A78-D6F26B96B697}"/>
+    <MsiProductCheck Property="VCRedistInstalled" Product="{BD95A8CD-1D9F-35AD-981A-3E7925026EBB}"/>
   </InstallChecks>
 
   <!-- Defines how to invoke the setup for the Visual C++ 11.0 redist -->
